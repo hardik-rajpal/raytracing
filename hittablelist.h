@@ -26,10 +26,11 @@ class hittable_list : public hittable {
         auto closest_so_far = rayT.max;
 
         for (const auto& object : objects) {
-            if (object->isHit(r, rayT, temp_rec)) {
+            if (object->isHit(r, interval(rayT.min,closest_so_far), temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec = temp_rec;
+                
             }
         }
 

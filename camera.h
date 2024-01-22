@@ -10,6 +10,7 @@ class camera {
     double aspectRatio = 16.0/9.0;
     int imgw = 400;
     int samplesPerPixel = 10;
+    int maxDepth = 10;
     /* Public Camera Parameters Here */
     ray getRay(int i, int j)const{
         vec3 point = pixel00Loc + i*pdU + j*pdV;
@@ -32,7 +33,7 @@ class camera {
                 color pixelColor(0,0,0);
                 for(size_t sample=0;sample<samplesPerPixel;sample++){
                     ray r = getRay(i,j);
-                    pixelColor += rayColor(r,world);
+                    pixelColor += rayColor(r,maxDepth,world);
                 }
                 write_color(cout,pixelColor,samplesPerPixel);
             }
@@ -63,12 +64,14 @@ class camera {
         pixel00Loc = vpTL + 0.5*(pdU+pdV);
     }
 
-    color rayColor(const ray& r, const hittable& world) const {
+    color rayColor(const ray& r, int depth,const hittable& world) const {
+        if(depth<=0){
+            return color(0,0,0);
+        }
         hitRecord rec;
-        if(world.isHit(r,interval(0,infinity),rec)){
-            vec3 N = rec.normal;
-            color c = 0.5*color(N.x()+1,N.y()+1,N.z()+1);
-            return c;
+        if(world.isHit(r,interval(0.001,infinity),rec)){
+            vec3 direction = random_on_hemisphere(rec.normal);
+            return 0.75*rayColor(ray(rec.p,direction),depth-1,world);
         }
         
         vec3 unitDir = unit_vector(r.direction());

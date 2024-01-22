@@ -9,8 +9,19 @@ class camera {
   public:
     double aspectRatio = 16.0/9.0;
     int imgw = 400;
+    int samplesPerPixel = 10;
     /* Public Camera Parameters Here */
-
+    ray getRay(int i, int j)const{
+        vec3 point = pixel00Loc + i*pdU + j*pdV;
+        point += pixelSampleSquare();
+        auto direction  = point-cameraCenter;
+        return ray(cameraCenter,direction);
+    }
+    vec3 pixelSampleSquare()const {
+        auto px = -0.5+random_double();
+        auto py = -0.5+random_double();
+        return (px*pdU) + (py*pdV);
+    }
     void render(const hittable& world) {
         initialize();
         cout<<"P3\n"<<imgw<<' '<<imgh<<"\n255\n";
@@ -18,10 +29,12 @@ class camera {
             clog<<"\rScanlines remaining: "<<(imgh-j)<<" "<<flush;
             for(int i=0;i<imgw;i++){
                 auto pixelCenter = pixel00Loc + i*pdU + j*pdV;
-                auto rayDirection = pixelCenter-cameraCenter;
-                ray r(cameraCenter,rayDirection);
-                color pixelColor = rayColor(r,world);
-                write_color(cout,pixelColor);
+                color pixelColor(0,0,0);
+                for(size_t sample=0;sample<samplesPerPixel;sample++){
+                    ray r = getRay(i,j);
+                    pixelColor += rayColor(r,world);
+                }
+                write_color(cout,pixelColor,samplesPerPixel);
             }
         }
         clog<<"\rDone                   \n";
@@ -38,16 +51,16 @@ class camera {
         auto focalLength = 1.0;    
         auto viewportHeight = 2.0;
         auto viewportWidth = viewportHeight*(static_cast<double>(imgw)/imgh);
-        point3 cameraCenter(0,0,0);
+        cameraCenter = point3(0,0,0);
 
         vec3 vpU(viewportWidth,0,0);
         vec3 vpV(0,-viewportHeight,0);
 
-        auto pdU = vpU/imgw;
-        auto pdV = vpV/imgh;
+        pdU = vpU/imgw;
+        pdV = vpV/imgh;
 
         auto vpTL = cameraCenter - vec3(0,0,focalLength) - (vpU/2) - vpV/2;
-        auto pixel00Loc = vpTL + 0.5*(pdU+pdV);
+        pixel00Loc = vpTL + 0.5*(pdU+pdV);
     }
 
     color rayColor(const ray& r, const hittable& world) const {

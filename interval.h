@@ -15,7 +15,11 @@ class interval {
     bool surrounds(double x) const {
         return min < x && x < max;
     }
-
+    double clamp(double x)const{
+        if(x>max){return max;}
+        if(x<min){return min;}
+        return x;
+    }
     static const interval empty, universe;
 };
 
